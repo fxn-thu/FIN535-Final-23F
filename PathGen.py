@@ -14,7 +14,7 @@ def Path_Generator(length, train):
     df = train.sample(n=length, replace=True)
     df.drop(columns = 'month', inplace=True)
     df.reset_index(inplace =True, drop=True)
-    return train.sample(n=length, replace=True)
+    return df
     
 
 def MC_generate(subdf, CAP, SAVE, g, ratio):
