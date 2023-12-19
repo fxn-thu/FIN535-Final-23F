@@ -72,6 +72,12 @@ def ret_annual_sharpe(rst_arr):
     return sharpe * math.sqrt(12)
 
 
+def ret_annual_sortino(rst_arr):
+    # On return level
+    sortino = rst_arr.mean()/rst_arr[rst_arr<0].std()
+    return sortino * math.sqrt(12)
+
+
 def max_drawdown(arr):
     """Calculating maxdrawdown for a given array:
     can be capital or return array; 
