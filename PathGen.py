@@ -1,8 +1,9 @@
 import numpy as np
 import math
+import random
 
 
-def Path_Generator(length, train):
+def Path_Generator_old(length, train):
     """
     Generate return paths from a given dataset
     for example, generating from training days
@@ -12,8 +13,19 @@ def Path_Generator(length, train):
         train (csv dataframe) training dataset
     """
     df = train.sample(n=length, replace=True)
-    df.drop(columns = 'month', inplace=True)
-    df.reset_index(inplace =True, drop=True)
+    return df
+
+def Path_Generator(length, data):
+    """
+    Generate return paths from a given dataset
+    for example, generating from training days
+
+    Args:
+        length (int): return length (for example, 10 years)
+        train (csv dataframe) training dataset
+    """
+    i = random.randint(0, data.shape[0]-length)
+    df = data.iloc[i:i+length,:]
     return df
     
 
@@ -33,7 +45,7 @@ def MC_generate(subdf, CAP, SAVE, g, ratio):
     """
     
     # First method
-    isJan = np.tile(np.arange(1, 13), 10) == 1
+    isJan = np.tile(np.arange(1, 13), int(subdf.shape[0]/12)) == 1
     subdf['month'] = isJan # Manually restart the month id
     # subdf['month'] = (subdf['month'] == 1)  
     subdf.iloc[0,5] = False # Can't can only increase after one year of working
@@ -68,14 +80,15 @@ def Capital_growth(subdf,CAP):
 
 def ret_annual_sharpe(rst_arr):
     # On return level
-    sharpe = rst_arr.mean()/rst_arr.std()
-    return sharpe * math.sqrt(12)
+    sharpe = rst_arr.mean()*12/(rst_arr.std()* math.sqrt(12))
+    return sharpe 
 
 
 def ret_annual_sortino(rst_arr):
     # On return level
-    sortino = rst_arr.mean()/rst_arr[rst_arr<0].std()
-    return sortino * math.sqrt(12)
+    downside_dev = np.sqrt(np.mean(np.minimum(0, rst_arr - rst_arr.mean())**2))
+    sortino = rst_arr.mean()*12/(downside_dev* math.sqrt(12))
+    return sortino
 
 
 def max_drawdown(arr):
@@ -91,6 +104,21 @@ def max_drawdown(arr):
     Returns:
         float: max drawdown (up to now)
     """
-    drawdowns = 1 - arr / np.maximum.accumulate(arr)
+    drawdowns = np.maximum.accumulate(arr)/arr-1
+    max_drawdown = np.max(drawdowns)
+    return max_drawdown
+
+
+def max_drawdown2(rst_arr):
+    """Calculating maxdrawdown for cumulative returns arr
+
+    Args:
+        rst_arr (float,array): cumulative return
+
+    Returns:
+        float: max drawdown (up to now)
+    """
+    arr = (1 + rst_arr).cumprod()
+    drawdowns = np.maximum.accumulate(arr)/arr-1
     max_drawdown = np.max(drawdowns)
     return max_drawdown

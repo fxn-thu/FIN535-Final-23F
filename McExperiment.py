@@ -67,7 +67,7 @@ def GetSummary(Simu_table, Simu_cap_table, path_length):
     Summary_table = pd.DataFrame(index = ['5Y','7Y','10Y'], \
     columns = ['Expected Cap','Std Cap','Exp Cap < 500k','Prob >= 500k',\
         'Expected Annual_sharpe','Expected Annual_sortino','Expected MDD',\
-            'ret VaR','ret CVaR','GaR','CGaR'])
+            'ret VaR','ret CVaR','cap VaR','cap CVaR'])
 
     Summary_table.iloc[:,0] = Simu_table.iloc[:,:3].mean().values
     Summary_table.iloc[:,1] = Simu_table.iloc[:,:3].std().values
