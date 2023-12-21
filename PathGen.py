@@ -1,19 +1,9 @@
 import numpy as np
+import pandas as pd
 import math
 import random
+import pickle
 
-
-def Path_Generator_old(length, train):
-    """
-    Generate return paths from a given dataset
-    for example, generating from training days
-
-    Args:
-        length (int): return length (for example, 10 years)
-        train (csv dataframe) training dataset
-    """
-    df = train.sample(n=length, replace=True)
-    return df
 
 def Path_Generator(length, data):
     """
@@ -122,3 +112,47 @@ def max_drawdown2(rst_arr):
     drawdowns = np.maximum.accumulate(arr)/arr-1
     max_drawdown = np.max(drawdowns)
     return max_drawdown
+
+def Path_Generator_random(length, train):
+    """
+    Generate return paths from a given dataset
+    for example, generating from training days
+
+    Args:
+        length (int): return length (for example, 10 years)
+        train (csv dataframe) training dataset
+    """
+    df = train.sample(n=length, replace=True)
+    return df
+
+# Functions for HMM
+def simulate_returns(model, start_regime, n_days):
+    current_regime = start_regime
+    simulated_returns = []
+    
+    for _ in range(n_days):
+        # Sample the next regime based on transition probabilities
+        next_regime = np.random.choice(np.arange(3), p=model.transmat_[current_regime])
+        
+        # Sample a return from the selected regime
+        simulated_return = model.sample(1)[0][0]
+        
+        simulated_returns.append(simulated_return)
+        current_regime = next_regime
+    
+    return simulated_returns
+
+def Path_Generator_HMM(length):
+    """
+    Path Generator with HMM model
+    With Three regimes, with starting regimes as 2
+
+    Args:
+        length (int): length of predicting dates
+    """
+    with open('hmm_model.pkl', 'rb') as file:
+        loaded_model = pickle.load(file)
+    simulated_returns = simulate_returns(loaded_model, start_regime=2, n_days=length)
+    simulated_returns = np.array(simulated_returns)
+    df = pd.DataFrame(simulated_returns, columns=['SPY', 'TLT', 'BAB', 'VOL', 'rf'])
+    return df

@@ -3,7 +3,7 @@ import pandas as pd
 
 from PathGen import *
 
-def Experiments(MC, path_length, ret_df, CAP, SAVE, g, ratio, years=[60,84,120], tax=0):
+def Experiments(MC, path_length, ret_df, CAP, SAVE, g, ratio, years=[60,84,120], tax=0.25):
     """
     Doing evaluations on all MC paths
 
@@ -16,7 +16,7 @@ def Experiments(MC, path_length, ret_df, CAP, SAVE, g, ratio, years=[60,84,120],
         g (float): saving growth
         ratio (float,list): ratio of asset allocations
         years (list, optional): _description_. Defaults to [60,84,120].
-        tax (int, optional): _description_. Defaults to 0.
+        tax (int, optional): _description_. Defaults to 0.25.
 
     Returns:
         Simu_table: _description_ [TO DO]
@@ -33,7 +33,8 @@ def Experiments(MC, path_length, ret_df, CAP, SAVE, g, ratio, years=[60,84,120],
 
     for mc in range(MC):
         # Call path generator function; ret_df can be train or test df
-        mcdf = Path_Generator(path_length, ret_df) 
+        mcdf = Path_Generator(path_length, ret_df) # Continue path
+        # mcdf = Path_Generator_HMM(path_length) #HMM path
         temdf = MC_generate(mcdf,CAP,SAVE,g,ratio)
         temdf.reset_index(inplace=True,drop=True)
         # Loc out end of different years
@@ -75,7 +76,7 @@ def GetSummary(Simu_table, Simu_cap_table, path_length):
     Summary_table.iloc[:,3] = (Simu_table.iloc[:,:3] >= 500000).mean().values # Probability of meeting the Goal
     Summary_table.iloc[:,4] = Simu_table.iloc[:,3:6].mean().values
     Summary_table.iloc[:,5] = Simu_table.iloc[:,6:9].mean().values
-    Summary_table.iloc[:,6] = Simu_table.iloc[:,10:13].mean().values
+    Summary_table.iloc[:,6] = Simu_table.iloc[:,9:12].mean().values
     var = np.quantile(Simu_table.iloc[:,-3:],0.01,axis=0)
     cvar = np.nanmean(Simu_table.iloc[:,-3:][Simu_table.iloc[:,-3:]<=var],axis = 0) 
     cap_var = np.quantile(Simu_table.iloc[:,:3],0.01,axis=0)
