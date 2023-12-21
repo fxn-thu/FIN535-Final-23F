@@ -20,7 +20,7 @@ def Path_Generator(length, data):
     
 
 def MC_generate(subdf, CAP, SAVE, g, ratio):
-    """Function for one MC path
+    """Function for one MC path; without car saving purpose
 
     Args:
         subdf: return dataframe, with all 5 assets
@@ -51,6 +51,47 @@ def MC_generate(subdf, CAP, SAVE, g, ratio):
     subdf['cap_input'] = CAP + subdf['addCap'].cumsum() # column index 10
     return subdf.loc[:,['addCap','ret','cap_total','cap_input']]
 
+
+def MC_generate_car(subdf, CAP, SAVE, g, ratio):
+    """Function for one MC path; with car saving process
+
+    Args:
+        subdf: return dataframe, with all 5 assets
+        simulated from a MC sampling with replacement
+        CAP (float): initial capital
+        SAVE (float): initial saving
+        g (float): saving growth
+        ratio (float,list): ratio of asset allocations
+
+    Returns:
+        dataframe: history information of a path
+    """
+    
+    # First method
+    isJan = np.tile(np.arange(1, 13), int(subdf.shape[0]/12)) == 1
+    subdf['month'] = isJan # Manually restart the month id
+    # subdf['month'] = (subdf['month'] == 1)  
+    subdf.iloc[0,5] = False # Can't can only increase after one year of working
+    subdf['addCap_flag'] = subdf['month'].cumsum() # column idx 6
+
+    # Calculate add capital
+    subdf['addCap'] = subdf['addCap_flag'].apply(lambda x: SAVE*(1+g)**(x-1)) # column idx 7
+    extract = subdf['addCap_flag'].apply(lambda x: extra_save(x))
+    subdf['addCap'] = subdf['addCap'] - extract # extract savings for car
+    subdf['addCap'] = subdf['addCap'] * subdf['month']
+
+    # return & Capital
+    subdf['ret'] = (subdf.iloc[:,:5] * ratio).sum(axis = 1) # column idx 8
+    subdf['cap_total'] = Capital_growth(subdf,CAP) # column index 9
+    subdf['cap_input'] = CAP + subdf['addCap'].cumsum() # column index 10
+    return subdf.loc[:,['addCap','ret','cap_total','cap_input']]
+
+def extra_save(x):
+    if x <= 5 and x >= 1:
+        car_save = 10000
+    else:
+        car_save = 0
+    return car_save
 
 # Functions --------------------------------------------------------------
 def Capital_growth(subdf,CAP):
