@@ -52,9 +52,9 @@ def Experiments(MC, path_length, ret_df, CAP, SAVE, g, ratio, years=[60,84,120],
         Simu_table.iloc[mc,9] = max_drawdown(temdf.iloc[:years[0],2]) #MaxdDD on capital level
         Simu_table.iloc[mc,10] = max_drawdown(temdf.iloc[:years[1],2])
         Simu_table.iloc[mc,11] = max_drawdown(temdf.iloc[:years[2],2])
-        Simu_table.iloc[mc,12] = cumu_rets[years[0]-1] # cumulative return to each time
-        Simu_table.iloc[mc,13] = cumu_rets[years[1]-1]
-        Simu_table.iloc[mc,14] = cumu_rets[years[2]-1]
+        Simu_table.iloc[mc,12] = np.power(1+cumu_rets[years[0]-1],1/years[0])-1 # cumulative ret annualize
+        Simu_table.iloc[mc,13] = np.power(1+cumu_rets[years[1]-1],1/years[1])-1
+        Simu_table.iloc[mc,14] = np.power(1+cumu_rets[years[2]-1],1/years[2])-1
 
         rst3 = temdf.loc[all_year_idx,'cap_total']
         rst4 = temdf.loc[all_year_idx,'cap_input']
@@ -112,9 +112,9 @@ def Experiments_car(MC, path_length, ret_df, CAP, SAVE, g, ratio, years=[60,84,1
         Simu_table.iloc[mc,9] = max_drawdown(temdf.iloc[:years[0],2]) #MaxdDD on capital level
         Simu_table.iloc[mc,10] = max_drawdown(temdf.iloc[:years[1],2])
         Simu_table.iloc[mc,11] = max_drawdown(temdf.iloc[:years[2],2])
-        Simu_table.iloc[mc,12] = cumu_rets[years[0]-1] # cumulative return to each time
-        Simu_table.iloc[mc,13] = cumu_rets[years[1]-1]
-        Simu_table.iloc[mc,14] = cumu_rets[years[2]-1]
+        Simu_table.iloc[mc,12] = np.power(1+cumu_rets[years[0]-1],1/years[0])-1 # cumulative ret annualize
+        Simu_table.iloc[mc,13] = np.power(1+cumu_rets[years[1]-1],1/years[1])-1
+        Simu_table.iloc[mc,14] = np.power(1+cumu_rets[years[2]-1],1/years[2])-1
 
         rst3 = temdf.loc[all_year_idx,'cap_total']
         rst4 = temdf.loc[all_year_idx,'cap_input']
@@ -141,10 +141,10 @@ def GetSummary(Simu_table, Simu_cap_table, path_length):
     cvar = np.nanmean(Simu_table.iloc[:,-3:][Simu_table.iloc[:,-3:]<=var],axis = 0) 
     cap_var = np.quantile(Simu_table.iloc[:,:3],0.01,axis=0)
     cap_cvar = np.nanmean(Simu_table.iloc[:,:3][Simu_table.iloc[:,:3]<=cap_var],axis = 0) 
-    Summary_table.iloc[:,7] = var
-    Summary_table.iloc[:,8] = cvar
-    Summary_table.iloc[:,9] = cap_var - 500000  
-    Summary_table.iloc[:,10] = cap_cvar - 500000
+    Summary_table.iloc[:,7] = - var #Quato in a negative way
+    Summary_table.iloc[:,8] = - cvar
+    Summary_table.iloc[:,9] = cap_var 
+    Summary_table.iloc[:,10] = cap_cvar
 
     cap_table = pd.DataFrame(index = range(1,int(path_length/12)+1), columns = ['capital'])
     cap_table.iloc[:,0] = Simu_cap_table.iloc[:,:].mean().values
