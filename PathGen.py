@@ -4,6 +4,9 @@ import math
 import random
 import pickle
 
+from functools import reduce
+from operator import mul
+
 
 def Path_Generator(length, data):
     """
@@ -92,6 +95,62 @@ def extra_save(x):
     else:
         car_save = 0
     return car_save
+
+
+def MC_generate_dynamic(subdf, CAP, SAVE, g):
+    """Function for one MC path; without car saving purpose
+
+    Args:
+        subdf: return dataframe, with all 5 assets
+        simulated from a MC sampling with replacement
+        CAP (float): initial capital
+        SAVE (float): initial saving
+        g (float): saving growth
+
+    Returns:
+        dataframe: history information of a path
+    """
+    
+    # First method
+    isJan = np.tile(np.arange(1, 13), int(subdf.shape[0]/12)) == 1
+    subdf['month'] = isJan # Manually restart the month id
+    # subdf['month'] = (subdf['month'] == 1)  
+    subdf.iloc[0,5] = False # Can't can only increase after one year of working
+    subdf['addCap_flag'] = subdf['month'].cumsum() # column idx 6
+
+    # Calculate add capital
+    subdf['addCap'] = subdf['addCap_flag'].apply(lambda x: SAVE*(1+g)**(x-1)) # column idx 7
+    subdf['addCap'] = subdf['addCap'] * subdf['month']
+
+    # return & Capital
+    subdf['ret'] = dynamic_decision(subdf)
+    subdf['cap_total'] = Capital_growth(subdf,CAP) # column index 9
+    subdf['cap_input'] = CAP + subdf['addCap'].cumsum() # column index 10
+    return subdf.loc[:,['addCap','ret','cap_total','cap_input']]
+
+
+def dynamic_decision(subdf):
+    ratio_sets = [[0.65,0.9,0.45,0.7,-0.55], 
+              [1,1,0.75,0.75,-1], 
+              [0.6, 0.45, 0.3, 0.7, -0.05]]
+    crt_ratio = ratio_sets[0]
+    ret_arr = []
+    for i in range(len(subdf)):
+        if (i % 12 == 0) and (i != 0):
+            updated_ret_arr = [x + 1 for x in ret_arr]
+            cummu = reduce(mul, updated_ret_arr)
+            y = i//12
+            if np.power(cummu,1/y)-1 <0.26:
+                crt_ratio = ratio_sets[1]
+            elif np.power(cummu,1/y)-1 >= 0.35:
+                crt_ratio = ratio_sets[2]
+            else:
+                crt_ratio = ratio_sets[0]
+        crt_ret = (subdf.iloc[i,:5] * crt_ratio).sum()
+        ret_arr.append(crt_ret)
+    return ret_arr
+    
+
 
 # Functions --------------------------------------------------------------
 def Capital_growth(subdf,CAP):
